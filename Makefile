@@ -5,7 +5,7 @@ dev ?= eth1
 OBJS = $(patsubst %.c,%.o,$(wildcard *.c))
 
 %.o: %.c
-	clang -O2 -g -target bpf -c $< -o $@
+	clang -Wall -O2 -g -target bpf -c $< -o $@
 
 all: $(OBJS)
 

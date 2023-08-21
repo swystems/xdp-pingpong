@@ -8,10 +8,6 @@
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
 
-#define NODE01_IPADDR bpf_htonl(0xc0a83865)
-#define NODE02_IPADDR bpf_htonl(0xc0a83866)
-#define MAX_TIMESTAMPS (1 << 20)
-
 #ifndef lock_xadd
 #define lock_xadd(ptr, val)    ((void) __sync_fetch_and_add(ptr, val))
 #endif
@@ -19,6 +15,13 @@
 #ifndef lock_fetch
 #define lock_fetch(ptr)        ((void) __sync_fetch_and_add(ptr, 0))
 #endif
+
+static volatile int indices[4] = {0};
+
+static const int PACKET_PORT = 1234;
+static const int NODE01_IPADDR = bpf_htonl (0xc0a83865);
+static const int NODE02_IPADDR = bpf_htonl (0xc0a83866);
+static const int MAX_TIMESTAMPS = 1 << 20;
 
 struct {
     __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
@@ -31,9 +34,7 @@ SEC(".maps"),
 xdp_map_t2 SEC (
 ".maps");
 
-static volatile int indices[4] = {0};
-
-int swap (void *a, void *b, const int size)
+static int swap (void *a, void *b, const int size)
 {
     if (size <= 0)
         return -1;
@@ -46,7 +47,7 @@ int swap (void *a, void *b, const int size)
     return size;
 }
 
-inline __u64
+static inline __u64
 get_timestamp ()
 {
     return bpf_ktime_get_ns ();
@@ -57,7 +58,7 @@ get_timestamp ()
  *
  * @param kind The number of timestamp (1,2,3,4)
  */
-__u32 set_timestamp (__u32 kind, __u64 timestamp)
+static __u32 set_timestamp (__u32 kind, __u64 timestamp)
 {
     --kind;
 
@@ -79,30 +80,20 @@ __u32 set_timestamp (__u32 kind, __u64 timestamp)
 
     if (!map) return -1;
 
-    bpf_map_update_elem (map, &indices[kind], &timestamp, BPF_ANY);
-
-    switch (kind)
-        {
-            case 0:
-                //bpf_printk ("Received at %llu\n", timestamp);
-                break;
-            case 1:
-                //bpf_printk ("Sent back at %llu\n", timestamp);
-                break;
-        }
+    bpf_map_update_elem (map, (const int*) &indices[kind], &timestamp, BPF_ANY);
 
     lock_xadd(&indices[kind], 1);
     return 0;
 }
 
-struct ethhdr *parse_ethhdr (void *data, void *data_end)
+static struct ethhdr *parse_ethhdr (void *data, void *data_end)
 {
     if (data + sizeof (struct ethhdr) > data_end)
         return NULL;
     return (struct ethhdr *) data;
 }
 
-struct iphdr *parse_iphdr (void *data, void *data_end)
+static struct iphdr *parse_iphdr (void *data, void *data_end)
 {
     void *ip_start = data + sizeof (struct ethhdr);
     if (ip_start + sizeof (struct iphdr) > data_end)
@@ -110,7 +101,7 @@ struct iphdr *parse_iphdr (void *data, void *data_end)
     return (struct iphdr *) ip_start;
 }
 
-struct udphdr *parse_udphdr (void *data, void *data_end)
+static struct udphdr *parse_udphdr (void *data, void *data_end)
 {
     void *udp_start = data + sizeof (struct ethhdr) + sizeof (struct iphdr);
     if (udp_start + sizeof (struct udphdr) > data_end)
@@ -142,18 +133,16 @@ int xdp_drop_prog (struct xdp_md *ctx)
     if (!udp)
         return XDP_PASS;
 
-    if (udp->dest == bpf_htons (1234))
+    if (udp->dest == bpf_htons (PACKET_PORT))
         {
             if (set_timestamp (1, arrival_timestamp) < 0)
                 {
-                    bpf_printk ("done!\n");
                     return XDP_PASS;
                 }
         }
     else
         {
-            bpf_printk("Started\n");
-            udp->dest = bpf_htons (1234);
+            udp->dest = bpf_htons (PACKET_PORT);
         }
 
     __u32 source = ip->saddr;
