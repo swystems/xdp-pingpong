@@ -16,8 +16,6 @@
 #define lock_fetch(ptr)        ((void) __sync_fetch_and_add(ptr, 0))
 #endif
 
-static volatile int indices[4] = {0};
-
 static const int PACKET_PORT = 1234;
 static const int NODE01_IPADDR = bpf_htonl (0xc0a83865);
 static const int NODE02_IPADDR = bpf_htonl (0xc0a83866);
@@ -33,6 +31,14 @@ struct {
 SEC(".maps"),
 xdp_map_t2 SEC (
 ".maps");
+
+struct {
+    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __type(key, __u32);
+    __type(value, __u32);
+    __uint(max_entries, 4);
+} indices
+SEC(".maps");
 
 static int swap (void *a, void *b, const int size)
 {
@@ -62,9 +68,6 @@ static __u32 set_timestamp (__u32 kind, __u64 timestamp)
 {
     --kind;
 
-    if (indices[kind] >= MAX_TIMESTAMPS)
-        return -1;
-
     void *map = NULL;
     switch (kind)
         {
@@ -80,9 +83,17 @@ static __u32 set_timestamp (__u32 kind, __u64 timestamp)
 
     if (!map) return -1;
 
-    bpf_map_update_elem (map, (const int*) &indices[kind], &timestamp, BPF_ANY);
+    __u32 *current_idx_ptr = (__u32 *) bpf_map_lookup_elem (&indices, &kind);
+    if (current_idx_ptr == NULL) return -1;
 
-    lock_xadd(&indices[kind], 1);
+    __u32 current_idx = *current_idx_ptr;
+
+    if (current_idx >= MAX_TIMESTAMPS) return -1;
+
+    bpf_map_update_elem (map, &current_idx, &timestamp, BPF_ANY);
+
+    ++current_idx;
+    bpf_map_update_elem (&indices, &kind, &current_idx, BPF_ANY);
     return 0;
 }
 
