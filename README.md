@@ -4,6 +4,11 @@
 The steps assume the machine is provisioned with the correct tools and dependencies. `vm-init.sh` can be used to setup a machine with the required dependencies.
 Linux installed in the machines must be compiled with BPF support enabled. The testing was done using Linux 6.4.2.
 
+### Bpftool
+To have a backward-compatible XDP program, bpftool is used to handle the XDP program insertion.
+- Install bpftool: `make bpftool`
+- Verify that the tool is installed: `bpftool version`
+
 ### CPU isolation
 In order to achieve lower jitter, a cpu should be dedicated just for the packets handling.
 - Verify the number of available CPUs: `grep -c proc /proc/cpuinfo`
@@ -54,10 +59,6 @@ The following steps allow to retrieve the results from the nodes, analyze them a
 - Compute the delay in communication between the nodes with `python3 format.py ts1.out ts2.out ts3.out ts4.out`
   - A `res.out` file will be generated, containing the average delay for each message exchange.
 - The results can be displayed with `python3 plot.py res.out`
-
-## Bpftool
-
-Few Make commands to dump the content of maps require `bpftool`. It can be downloaded from the Github repo (https://github.com/libbpf/bpftool) as an executable. It is not required for the analysis.
 
 ## Resources 
 https://unix.stackexchange.com/questions/326579/how-to-ensure-exclusive-cpu-availability-for-a-running-process
