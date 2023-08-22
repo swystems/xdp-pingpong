@@ -1,6 +1,7 @@
 sec ?= xdp_pp
 obj ?= xdp.o
 dev ?= eth1
+type ?= xdp
 
 OBJS = $(patsubst %.c,%.o,$(wildcard *.c))
 
@@ -12,14 +13,13 @@ all: $(OBJS)
 clean:
 	rm -f *.o
 
-insert:
-	sudo ip link set $(dev) xdp obj $(obj) sec $(sec)
-
-ins:
-	sudo ip link set $(dev) xdpgeneric obj xdp.o sec xdp_pp
+ins: rm
+	sudo bpftool prog load $(obj) /sys/fs/bpf/$(sec) type $(type) #pinmaps /sys/fs/bpf/$(sec)/
+	sudo bpftool net attach xdp name xdp_prog dev $(dev)
 
 rm:
-	sudo ip link set $(dev) xdpgeneric off
+	sudo bpftool net detach xdp dev $(dev) 2>/dev/null || true
+	sudo rm -rf /sys/fs/bpf/$(sec)
 
 dmesg:
 	sudo cat  /sys/kernel/debug/tracing/trace_pipe
@@ -30,5 +30,9 @@ dump:
 list:
 	sudo ./bpftool map list
 
-analysis:
-	c++ -O2 -g -lbpf -lelf analysis.c -o analysis
+bpftool:
+	wget https://github.com/libbpf/bpftool/releases/download/v7.2.0/bpftool-v7.2.0-amd64.tar.gz
+	tar -xf bpftool-v7.2.0-amd64.tar.gz
+	chmod +x bpftool
+	sudo mv bpftool /usr/bin/
+	rm bpftool-v7.2.0-amd64.tar.gz

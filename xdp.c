@@ -16,9 +16,10 @@
 #define lock_fetch(ptr)        ((void) __sync_fetch_and_add(ptr, 0))
 #endif
 
+static const char NODE01_IPADDR[] = {192, 168, 56, 101};
+static const char NODE02_IPADDR[] = {192, 168, 56, 103};
 static const int PACKET_PORT = 1234;
-static const int NODE01_IPADDR = bpf_htonl (0xc0a83865);
-static const int NODE02_IPADDR = bpf_htonl (0xc0a83866);
+
 static const int MAX_TIMESTAMPS = 1 << 20;
 
 struct {
@@ -40,17 +41,22 @@ struct {
 } indices
 SEC(".maps");
 
-static int swap (void *a, void *b, const int size)
+static inline int swap (void *a, void *b, const int size, const void *packet_end)
 {
-    if (size <= 0)
+    const void *end = b + size;
+    if (end > packet_end)
         return -1;
-    for (char *i = a, *j = b; i < ((char *) a) + size && j < ((char *) b) + size; ++i, ++j)
+
+    __u8 tmp;
+    while (b < end)
         {
-            char tmp = *i;
-            *i = *j;
-            *j = tmp;
+            tmp = *(__u8 *) a;
+            *(__u8 *) a = *(__u8 *) b;
+            *(__u8 *) b = tmp;
+            ++a;
+            ++b;
         }
-    return size;
+    return 0;
 }
 
 static inline __u64
@@ -97,14 +103,14 @@ static __u32 set_timestamp (__u32 kind, __u64 timestamp)
     return 0;
 }
 
-static struct ethhdr *parse_ethhdr (void *data, void *data_end)
+static inline struct ethhdr *parse_ethhdr (void *data, void *data_end)
 {
     if (data + sizeof (struct ethhdr) > data_end)
         return NULL;
     return (struct ethhdr *) data;
 }
 
-static struct iphdr *parse_iphdr (void *data, void *data_end)
+static inline struct iphdr *parse_iphdr (void *data, void *data_end)
 {
     void *ip_start = data + sizeof (struct ethhdr);
     if (ip_start + sizeof (struct iphdr) > data_end)
@@ -112,7 +118,7 @@ static struct iphdr *parse_iphdr (void *data, void *data_end)
     return (struct iphdr *) ip_start;
 }
 
-static struct udphdr *parse_udphdr (void *data, void *data_end)
+static inline struct udphdr *parse_udphdr (void *data, void *data_end)
 {
     void *udp_start = data + sizeof (struct ethhdr) + sizeof (struct iphdr);
     if (udp_start + sizeof (struct udphdr) > data_end)
@@ -120,9 +126,16 @@ static struct udphdr *parse_udphdr (void *data, void *data_end)
     return (struct udphdr *) udp_start;
 }
 
+static inline __u8
+is_valid_ip_packet (struct iphdr *ip)
+{
+    return (ip->saddr == *((__be32 *) NODE01_IPADDR) && ip->daddr == *((__be32 *) NODE02_IPADDR))
+           || (ip->saddr == *((__be32 *) NODE02_IPADDR) && ip->daddr == *((__be32 *) NODE01_IPADDR));
+}
+
 SEC (
 "xdp_pp")
-int xdp_drop_prog (struct xdp_md *ctx)
+int xdp_prog (struct xdp_md *ctx)
 {
     __u64 arrival_timestamp = get_timestamp ();
 
@@ -156,15 +169,11 @@ int xdp_drop_prog (struct xdp_md *ctx)
             udp->dest = bpf_htons (PACKET_PORT);
         }
 
-    __u32 source = ip->saddr;
-    __u32 dest = ip->daddr;
-
-    if (!((source == NODE01_IPADDR && dest == NODE02_IPADDR) ||
-          (source == NODE02_IPADDR && dest == NODE01_IPADDR)))
+    if (is_valid_ip_packet (ip) == 0)
         return XDP_PASS;
 
-    swap (&eth->h_source, &eth->h_dest, sizeof (eth->h_source));
-    swap (&ip->saddr, &ip->daddr, sizeof (ip->saddr));
+    swap (&eth->h_source, &eth->h_dest, sizeof (eth->h_source), data_end);
+    swap (&ip->saddr, &ip->daddr, sizeof (ip->saddr), data_end);
     ip->check = 0;
 
     set_timestamp (2, get_timestamp ());

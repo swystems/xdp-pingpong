@@ -1,6 +1,6 @@
 import sys
 
-CPU_NAME = "cpu3"
+CPU_NAME = "cpu1"
 
 def format(filename):
     infile = open(filename, 'r')
@@ -11,7 +11,7 @@ def format(filename):
         if not line:
             break
 
-        if "cpu3" in line:
+        if CPU_NAME in line:
             _, value = line.split(":")
             value = int(value)
             outfile.write(f"{value}\n");
