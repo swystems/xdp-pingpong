@@ -157,6 +157,9 @@ int xdp_prog (struct xdp_md *ctx)
     if (!udp)
         return XDP_PASS;
 
+    if (is_valid_ip_packet (ip) == 0)
+        return XDP_PASS;
+
     if (udp->dest == bpf_htons (PACKET_PORT))
         {
             if (set_timestamp (1, arrival_timestamp) < 0)
@@ -169,12 +172,11 @@ int xdp_prog (struct xdp_md *ctx)
             udp->dest = bpf_htons (PACKET_PORT);
         }
 
-    if (is_valid_ip_packet (ip) == 0)
-        return XDP_PASS;
-
     swap (&eth->h_source, &eth->h_dest, sizeof (eth->h_source), data_end);
     swap (&ip->saddr, &ip->daddr, sizeof (ip->saddr), data_end);
     ip->check = 0;
+
+    bpf_printk("Sending packet back");
 
     set_timestamp (2, get_timestamp ());
     return XDP_TX;

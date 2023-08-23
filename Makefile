@@ -1,7 +1,7 @@
 sec ?= xdp_pp
 obj ?= xdp.o
 dev ?= eth1
-type ?= xdp
+type ?= xdpoffload
 
 OBJS = $(patsubst %.c,%.o,$(wildcard *.c))
 
@@ -13,8 +13,13 @@ all: $(OBJS)
 clean:
 	rm -f *.o
 
-ins: rm
-	sudo bpftool prog load $(obj) /sys/fs/bpf/$(sec) type $(type) #pinmaps /sys/fs/bpf/$(sec)/
+load:
+	sudo bpftool prog load $(obj) /sys/fs/bpf/$(sec) type xdp
+
+ins: rm load
+	sudo bpftool net attach $(type) name xdp_prog dev $(dev)
+
+insgeneric: rm load
 	sudo bpftool net attach xdp name xdp_prog dev $(dev)
 
 rm:
