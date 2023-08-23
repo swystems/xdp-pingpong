@@ -1,4 +1,4 @@
-vagrant ssh node01 -c "sudo cp /sys/fs/bpf/xdp_map_t1 /vagrant/ts/ts4" && \
-vagrant ssh node01 -c "sudo cp /sys/fs/bpf/xdp_map_t2 /vagrant/ts/ts1" && \
-vagrant ssh node03 -c "sudo cp /sys/fs/bpf/xdp_map_t1 /vagrant/ts/ts2" && \
-vagrant ssh node03 -c "sudo cp /sys/fs/bpf/xdp_map_t2 /vagrant/ts/ts3"
+rsync ${1}/xdp_map_t1.out ./t4
+rsync ${1}/xdp_map_t2.out ./t1
+rsync ${2}/xdp_map_t1.out ./t2
+rsync ${2}/xdp_map_t1.out ./t3

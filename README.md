@@ -42,7 +42,9 @@ However, the program must be executed; XDP is triggered on receive, but there mu
 
 ### Analyze the results
 Technically, the timestamps stored in the XDP program can be accessed programmatically. However, for sake of simplicity, the debug log files of the XDP can be used.
-These files can be found in `/sys/fs/bpf/tc/globals/` of each node. To make the analysis easier, the `copy_ts.sh` script can be used.
+These files can be found in `/sys/fs/bpf/tc/globals/` of each node. 
+
+To make the analysis easier, the `copy_ts.sh` script can be used by executing it with two positional arguments: the path to the maps in node1 and the path to the maps in node2. The maps are assumed to be formatted, i.e. have a `.out` extension.
 
 The data is stored in the form of 4 timestamps:
 - Timestamp 1 (`ts1`): packet is sent by node01
