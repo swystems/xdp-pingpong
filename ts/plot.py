@@ -17,7 +17,7 @@ def main():
             if float(line) < 1000000:
                 yvals.append(float(line))
     xvals = list(range(1, len(yvals)+1))
-    plt.plot(xvals, yvals)
+    plt.scatter(xvals, yvals, s=4)
     plt.show()
 
 if __name__ == "__main__":
