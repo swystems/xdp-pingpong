@@ -7,6 +7,7 @@
 
 #define SERVER_IP "192.168.56.102"
 #define SERVER_PORT 1234
+#define MAX_TIMESTAMPS 1 << 20
 
 /**
  * Packet structure:
@@ -47,20 +48,25 @@ int main() {
 
 
     memset(&payload, 0, sizeof(struct pp_payload));
-    payload.round = 3;
+    // payload.round = 3;
     payload.id = 0; // PING
 
-    clock_gettime(CLOCK_MONOTONIC, &ts1_timespec);
-
-    payload.ts1 = ts1_timespec.tv_sec * 1000000000LL + ts1_timespec.tv_nsec;
+ 
     
-    printf("ts1:%lu\n", payload.ts1);
+    //printf("ts1:%lu\n", payload.ts1);
 
-    int bytesSent = sendto(clientSocket, &payload, sizeof(payload), 0, (struct sockaddr*)&serverAddr, addrSize);
-    if (bytesSent == -1) {
-        perror("Sending data failed");
-        exit(EXIT_FAILURE);
+    for (int i = 0; i < MAX_TIMESTAMPS; i++) {
+        payload.round = i;
+        clock_gettime(CLOCK_MONOTONIC, &ts1_timespec);
+        payload.ts1 = ts1_timespec.tv_sec * 1000000000LL + ts1_timespec.tv_nsec;
+
+        int bytesSent = sendto(clientSocket, &payload, sizeof(payload), 0, (struct sockaddr*)&serverAddr, addrSize);
+        if (bytesSent == -1) {
+            perror("Sending data failed");
+            exit(EXIT_FAILURE);
+        }
     }
+    
 
     // Close the socket
     close(clientSocket);
