@@ -158,7 +158,7 @@ int xdp_prog(struct xdp_md *ctx)
 {
     __u64 arrival_timestamp = get_timestamp();
 
-    bpf_printk("recvd packet");
+    //bpf_printk("recvd packet");
 
     void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
@@ -177,7 +177,7 @@ int xdp_prog(struct xdp_md *ctx)
 
     if (is_valid_ip_packet(ip) == 0)
         return XDP_PASS;
-
+    //bpf_printk("valid pkt\n");
     struct udphdr *udp = parse_udphdr(data, data_end);
     if (!udp)
         return XDP_PASS;
@@ -187,7 +187,7 @@ int xdp_prog(struct xdp_md *ctx)
         return XDP_PASS;
     }
 
-    bpf_printk("correct port, processing payload");
+    //bpf_printk("correct port, processing payload");
 
     struct pp_payload *payload = get_payload(data, data_end);
     if (!payload)
