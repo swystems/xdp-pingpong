@@ -3,10 +3,11 @@ obj ?= xdp.o
 dev ?= eth1
 type ?= xdpoffload
 
+CLANG = clang-11
 OBJS = $(patsubst %.c,%.o,$(wildcard *.c))
 
-%.o: %.c
-	clang -Wall -O2 -g -target bpf -c $< -o $@
+xdp.o: xdp.c
+	$(CLANG) -Wall -O2 -g -target bpf -c $< -o $@ 
 
 all: $(OBJS)
 
@@ -41,3 +42,12 @@ bpftool:
 	chmod +x bpftool
 	sudo mv bpftool /usr/bin/
 	rm bpftool-v7.2.0-amd64.tar.gz
+
+userprog:
+	$(CLANG) -Wall -O2 -g -lbpf -lxdp xdp_user.c -o xdp_user.o
+
+install:
+	cd ./lib/xdp-tools/ && ./configure && cd ../../
+	sudo make -C ./lib/xdp-tools/lib/libxdp install -j4
+	sudo make -C ./lib/xdp-tools/lib/libbpf/src install -j4
+	echo "LD_LIBRARY_PATH=/usr/lib/:/usr/lib64/:/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH" | sudo tee -a /etc/environment

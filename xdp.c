@@ -23,7 +23,7 @@ static const int PACKET_PORT = 1234;
 static const int MAX_TIMESTAMPS = 1 << 20;
 
 struct {
-    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(type, BPF_MAP_TYPE_ARRAY);
     __type(key, __u32);
     __type(value, __u64);
     __uint(max_entries, MAX_TIMESTAMPS);
@@ -34,7 +34,7 @@ xdp_map_t2 SEC (
 ".maps");
 
 struct {
-    __uint(type, BPF_MAP_TYPE_PERCPU_ARRAY);
+    __uint(type, BPF_MAP_TYPE_ARRAY);
     __type(key, __u32);
     __type(value, __u32);
     __uint(max_entries, 4);
@@ -138,6 +138,7 @@ SEC (
 int xdp_prog (struct xdp_md *ctx)
 {
     __u64 arrival_timestamp = get_timestamp ();
+    bpf_printk("Received something! :D");
 
     void *data_end = (void *) (long) ctx->data_end;
     void *data = (void *) (long) ctx->data;

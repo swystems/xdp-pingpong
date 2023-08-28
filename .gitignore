@@ -1,0 +1,7 @@
+*.o
+.*
+!.gitignore
+!.gitmodules
+bpftool
+linux*
+*VBoxHeadless*
