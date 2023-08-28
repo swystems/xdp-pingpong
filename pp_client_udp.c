@@ -9,6 +9,7 @@
 #define SERVER_IP ""
 #define SERVER_PORT 1234
 #define MAX_TIMESTAMPS 1 << 20
+#define CLOCK_FREQUENCY 2400000000 // 2.4 GHz
 
 /**
  * Packet structure:
@@ -25,6 +26,16 @@ struct pp_payload {
     uint64_t ts2;
     uint64_t ts3;
 };
+
+int uwait(float usecs) {
+    int counter = 0;
+    uint32_t cycles = usecs * CLOCK_FREQUENCY / 1000000;
+    for (int i = 0; i < cycles; i++) {
+        asm(""); // do not optimise
+        counter++;
+    }
+    return counter;
+}
 
 
 int main() {
@@ -74,6 +85,8 @@ int main() {
             perror("Sending data failed");
             exit(EXIT_FAILURE);
         }
+
+        uwait(10);
     }
 
 

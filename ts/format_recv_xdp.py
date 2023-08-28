@@ -6,7 +6,7 @@ def compute_latency(ts_list):
     return (( float(ts_list[4]) - float(ts_list[1])) - (float(ts_list[3]) - float(ts_list[2])))/2
 
 def format(path):
-    _, filename = os.path.split(path)
+    #_, filename = os.path.split(path)
     infile = open(path, 'r')
     tsfile = open(f"./ts.out", 'w')
     latfile = open(f"./lat.out", 'w')

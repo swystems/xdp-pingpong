@@ -205,9 +205,9 @@ int xdp_prog(struct xdp_md *ctx)
         ip->check = 0;
 
         bpf_printk("Sending packet back");
-
-        payload->ts3 = get_timestamp();
         payload->id = 1;
+        payload->ts3 = get_timestamp();
+
         return XDP_TX;
     }
     else if (payload->id == 1)
