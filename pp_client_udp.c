@@ -20,8 +20,8 @@
  * id = 1 -> PONG
 */
 struct pp_payload {
+    uint16_t id;
     uint64_t round;
-    uint8_t id;
     uint64_t ts1;
     uint64_t ts2;
     uint64_t ts3;

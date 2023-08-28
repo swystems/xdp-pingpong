@@ -20,6 +20,7 @@
 static const char NODE01_IPADDR[] = {192, 168, 56, 101};
 static const char NODE02_IPADDR[] = {192, 168, 56, 102};
 static const int PACKET_PORT = 1234;
+static const int PAYLOAD_OFFSET = 38;
 
 static const int MAX_TIMESTAMPS = 1 << 20;
 
@@ -33,8 +34,8 @@ static const int MAX_TIMESTAMPS = 1 << 20;
  */
 struct pp_payload
 {
+    __u16 id;
     __u64 round;
-    __u8 id;
     __u64 ts1;
     __u64 ts2;
     __u64 ts3;
@@ -144,7 +145,7 @@ static inline struct pp_payload *get_payload(void *data, void *data_end)
 {
 
     void *payload_ptr = data + sizeof(struct ethhdr) + sizeof(struct iphdr) +
-                        sizeof(struct udphdr);
+                        sizeof(struct udphdr) + PAYLOAD_OFFSET;
 
     if (payload_ptr + sizeof(struct pp_payload) > data_end)
         return NULL;
