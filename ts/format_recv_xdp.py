@@ -20,7 +20,7 @@ def format(path):
         l = line.split(":")
 
         if len(l) > 1: #filter first 2 warning lines
-            csv_list = l[1][2:-3] # remove space and brackets
+            csv_list = l[1][2:l[1].index("]")] # remove space and brackets
             tsfile.write(f"{csv_list}\n");
             latfile.write(f"{compute_latency(csv_list.split(','))}\n")
 
