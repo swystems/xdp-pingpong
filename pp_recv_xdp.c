@@ -32,6 +32,7 @@ static const int MAX_TIMESTAMPS = 1 << 20;
  * id = 0 -> PING
  * id = 1 -> PONG
  */
+#pragma pack(push, 2) // avoid struct padding
 struct pp_payload
 {
     __u16 id;
@@ -40,6 +41,7 @@ struct pp_payload
     __u64 ts2;
     __u64 ts3;
 };
+#pragma pack(pop)
 
 // MAPS
 struct
@@ -176,9 +178,11 @@ int xdp_prog(struct xdp_md *ctx)
     if (!ip)
         return XDP_PASS;
 
-    if (is_valid_ip_packet(ip) == 0)
-        return XDP_PASS;
+    // skip the IP check
+    // if (is_valid_ip_packet(ip) == 0)
+    //     return XDP_PASS;
     //bpf_printk("valid pkt\n");
+    
     struct udphdr *udp = parse_udphdr(data, data_end);
     if (!udp)
         return XDP_PASS;
