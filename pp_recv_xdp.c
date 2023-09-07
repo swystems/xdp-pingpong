@@ -17,17 +17,18 @@
 #define lock_fetch(ptr) ((void)__sync_fetch_and_add(ptr, 0))
 #endif
 
-static const char NODE01_IPADDR[] = {192, 168, 56, 101};
-static const char NODE02_IPADDR[] = {192, 168, 56, 102};
+// ip check disabled
+static const char NODE01_IPADDR[] = {};
+static const char NODE02_IPADDR[] = {};
+// port check only
 static const int PACKET_PORT = 1234;
-static const int PAYLOAD_OFFSET = 38;
-
-static const int MAX_TIMESTAMPS = 1 << 20;
+static const int PAYLOAD_OFFSET = 0;
+static const int MAX_TIMESTAMPS = 10000000;
 
 /**
  * Packet structure:
  * ,--------------------------------------------------------,
- * | ethhdr | iphdr | udphdr | round | id | ts1 | ts2 | ts3 |
+ * | ethhdr | iphdr | udphdr | id | round | ts1 | ts2 | ts3 |
  * '--------------------------------------------------------'
  * id = 0 -> PING
  * id = 1 -> PONG
@@ -53,18 +54,6 @@ struct
     __uint(pinning, LIBBPF_PIN_BY_NAME);
 } pp_timestamps
     SEC(".maps");
-
-// static inline __u64 rdtsc(void)
-// {
-// 	__u64 var;
-// 	__u32 hi, lo;
-
-// 	asm volatile
-// 	    ("rdtsc" : "=a" (lo), "=d" (hi));
-
-// 	var = ((__u64)hi << 32) | lo;
-// 	return (var);
-// }
 
 static inline int swap(void *a, void *b, const int size, const void *packet_end)
 {
