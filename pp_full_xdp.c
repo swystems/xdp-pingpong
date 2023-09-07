@@ -17,7 +17,7 @@
 #endif
 
 static const char NODE01_IPADDR[] = {192, 168, 56, 101};
-static const char NODE02_IPADDR[] = {192, 168, 56, 103};
+static const char NODE02_IPADDR[] = {192, 168, 56, 102};
 static const int PACKET_PORT = 1234;
 
 static const int MAX_TIMESTAMPS = 1 << 20;

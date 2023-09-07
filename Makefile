@@ -1,14 +1,18 @@
-sec ?= xdp_pp
-obj ?= xdp.o
+sec ?= xdp_pp 
+obj ?= xdp.o		
 dev ?= eth1
 type ?= xdpoffload
 
 OBJS = $(patsubst %.c,%.o,$(wildcard *.c))
 
-%.o: %.c
+%_xdp.o: %_xdp.c
 	clang -Wall -O2 -g -target bpf -c $< -o $@
 
 all: $(OBJS)
+
+pp_client_udp.o: pp_client_udp.c
+	gcc $< -o $@
+	chmod +x $@
 
 clean:
 	rm -f *.o
