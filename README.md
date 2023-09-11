@@ -1,5 +1,7 @@
 # How to benchmark XDP with Vagrant nodes
 
+> warning: this code was tested with kernel 5.9.8 and might be incompatible with newer versions
+
 ## Steps
 The steps assume the machine is provisioned with the correct tools and dependencies. `vm-init.sh` can be used to setup a machine with the required dependencies.
 Linux installed in the machines must be compiled with BPF support enabled. The testing was done using Linux 6.4.2.
