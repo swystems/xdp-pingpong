@@ -28,6 +28,7 @@ static const char NODE02_IPADDR[] = {};
 // port check only
 static const int PACKET_PORT = 1234;
 static const int PAYLOAD_OFFSET = 0;
+static const int WARMUP_ROUNDS = 10;
 
 static const long CLOCK_SPEED = 2400000000; // 2.4 GHz
 static const int BUCKETS = 10000; // number of buckets
@@ -111,13 +112,14 @@ get_timestamp()
  */
 static __u32 update_maps(struct pp_payload *payload, __u64 ts4)
 {
+    if (payload->round < WARMUP_ROUNDS)
+        return 0;
+
     // udpate buckets stats: compute latency and increase counter
     // of its corresponding bucket
-
-    // __u64 *retval = kzalloc(sizeof(__u64), GFP_KERNEL);
     __u64 latency_ns = ((ts4 - payload->ts1) - (payload->ts3 - payload->ts2))/2 
                         * 1000000000 / CLOCK_SPEED; // assume GHz
-
+                        
     if (latency_ns == 0){
         // update zero count
         __u64 *count = (__u64 *) bpf_map_lookup_elem(&latency_global_stats, &zerocount_key);
@@ -148,7 +150,7 @@ static __u32 update_maps(struct pp_payload *payload, __u64 ts4)
 
     // udpate total packets (rounds)
     bpf_map_update_elem(&latency_global_stats, &total_key, &payload->round, BPF_ANY);
-    // update min 
+    // update min
     __u64 *min = (__u64 *) bpf_map_lookup_elem(&latency_global_stats, &min_key);
     if (!min || (*min) == 0 || latency_ns < *min) {
         bpf_map_update_elem(&latency_global_stats, &min_key, &latency_ns, BPF_ANY);
